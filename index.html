@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Program Scanner</title>
+</head>
+<body>
+    <h1>Program Scanner</h1>
+    <form id="scanner-form" action="/parse" method="post">
+        <label for="teks">Teks Input:</label><br>
+        <textarea id="teks" name="teks" rows="6"></textarea><br><br>
+        <input type="submit" value="Parsing">
+    </form>
+
+    <h1>Hasil Parsing</h1>
+    <textarea id="hasil" rows="20">{{.tokens}}</textarea>
+</body>
+</html>

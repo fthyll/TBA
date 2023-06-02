@@ -1,146 +1,104 @@
 package main
 
 import (
-	"fmt"
+	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
-type Stack struct {
-	n   int
-	isi []string
+func getTokenFromString(text string, index int) string {
+	k := len(text)
+	word := ""
+
+	// Ignore spaces, carriage returns, and line breaks
+	for index < k && (text[index] == ' ' || text[index] == '\r' || text[index] == '\n') {
+		index++
+	}
+
+	// Extract a token
+	for index < k && text[index] != ' ' && text[index] != '\r' && text[index] != '\n' {
+		if text[index] == '>' {
+			if word != "" {
+				return word
+			} else {
+				index++
+				if text[index] == '=' {
+					index++
+					return ">="
+				} else {
+					return ">"
+				}
+			}
+		} else if text[index] == '<' {
+			if word != "" {
+				return word
+			} else {
+				index++
+				if text[index] == '=' {
+					index++
+					return "<="
+				} else {
+					return "<"
+				}
+			}
+		} else if text[index] == '=' {
+			if word != "" {
+				return word
+			} else {
+				index++
+				return "="
+			}
+		} else if text[index] == '+' {
+			if word != "" {
+				return word
+			} else {
+				index++
+				return "+"
+			}
+		} else if text[index] == '-' {
+			if word != "" {
+				return word
+			} else {
+				index++
+				return "-"
+			}
+		}
+		word += string(text[index])
+		index++
+	}
+
+	return word
 }
 
-func push(stack *Stack, x string) {
-	stack.n++
-	stack.isi = append(stack.isi, x)
-}
+func scan(text string) []string {
+	var tokens []string
+	k := len(text)
+	j := 0
 
-func pop(stack *Stack) string {
-	x := stack.isi[stack.n]
-	stack.n--
-	stack.isi = stack.isi[:stack.n+1]
-	return x
-}
+	for j < k {
+		token := getTokenFromString(text, j)
+		tokens = append(tokens, token)
+	}
 
-func isEmpty(stack Stack) bool {
-	return stack.n == 0
-}
-
-func readTop(stack Stack) string {
-	return stack.isi[stack.n]
-}
-
-func getToken(teks string, j *int) string {
-	k := len(teks)
-	simbol := string(teks[*j])
-	*j++
-	return simbol
+	return tokens
 }
 
 func main() {
-	tabelParsing := map[string]map[string]string{
-		"S": {
-			"x": "AB",
-			"y": "AB",
-			"a": "CD",
-			"b": "CD",
-			"#": "-",
-		},
-		"A": {
-			"x": "xA",
-			"y": "y",
-			"a": "-",
-			"b": "-",
-			"#": "-",
-		},
-		"B": {
-			"x": "x",
-			"y": "yB",
-			"a": "-",
-			"b": "-",
-			"#": "-",
-		},
-		"C": {
-			"x": "-",
-			"y": "-",
-			"a": "aD",
-			"b": "b",
-			"#": "-",
-		},
-		"D": {
-			"x": "-",
-			"y": "-",
-			"a": "a",
-			"b": "bC",
-			"#": "-",
-		},
-	}
-	simbolAwal := "S"
+	r := gin.Default()
 
-	input := "xyyx"
-	i := 0
-	hsl := ""
-	stack := Stack{}
-	push(&stack, simbolAwal)
-	simbol := getToken(input, &i)
-	for !isEmpty(stack) {
-		top := readTop(stack)
-		if top >= "a" { // top = terminal
-			if top == simbol {
-				pop(&stack)
-				simbol = getToken(input, &i)
-			} else {
-				hsl = "Error/Ditolak"
-				break
-			}
-		} else if top <= "Z" { // top = non terminal
-			sel := tabelParsing[top][simbol]
-			if sel != "-" {
-				pop(&stack)
-				for k := len(sel) - 1; k >= 0; k-- {
-					push(&stack, string(sel[k]))
-				}
-			} else {
-				hsl = "Error/Ditolak"
-				break
-			}
-		}
-	}
+	r.LoadHTMLFiles("index.html")
 
-	fmt.Println("<script>")
-	fmt.Println("document.getElementById('hasil').innerHTML='';")
-	fmt.Println("</script>")
-	fmt.Println("push(&stack,simbolAwal)")
-	fmt.Println("simbol=getToken(input,&i)")
-	fmt.Println("for !isEmpty(stack) {")
-	fmt.Println("top=readTop(stack)")
-	fmt.Println("if top>='a' {")
-	fmt.Println("if top==simbol {")
-	fmt.Println("pop(&stack)")
-	fmt.Println("simbol=getToken(input,&i)")
-	fmt.Println("} else {")
-	fmt.Println("hsl='Error/Ditolak'")
-	fmt.Println("break")
-	fmt.Println("}")
-	fmt.Println("} else if top<='Z' {")
-	fmt.Println("sel=tabelParsing[top][simbol]")
-	fmt.Println("if sel!='-' {")
-	fmt.Println("pop(&stack)")
-	fmt.Println("for k:=len(sel)-1;k>=0;k-- {")
-	fmt.Println("push(&stack,string(sel[k]))")
-	fmt.Println("}")
-	fmt.Println("} else {")
-	fmt.Println("hsl='Error/Ditolak'")
-	fmt.Println("break")
-	fmt.Println("}")
-	fmt.Println("}")
-	fmt.Println("}")
+	r.POST("/parse", func(c *gin.Context) {
+		inputText := c.PostForm("teks")
+		tokens := scan(inputText)
+		c.HTML(200, "result.html", gin.H{
+			"tokens": strings.Join(tokens, "\n"),
+		})
+	})
 
-	fmt.Println("<script>")
-	fmt.Println("document.getElementById('tes').innerHTML='" + input[:len(input)-1] + "';")
-	if simbol == "#" && hsl == "" {
-		fmt.Println("document.getElementById('hasil').innerHTML='DITERIMA';")
-	} else {
-		fmt.Println("document.getElementById('hasil').innerHTML='" + hsl + "';")
-	}
-	fmt.Println("</script>")
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index.html", nil)
+	})
+
+	r.Run()
 }
