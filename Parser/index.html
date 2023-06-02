@@ -1,56 +1,198 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <title>LL(1) Parser</title>
-  <style>
-    table {
-      border-collapse: collapse;
-    }
-
-    table,
-    th,
-    td {
-      border: 1px solid black;
-      padding: 5px;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-  </style>
+    <title>LL(1) Parsing</title>
+    <style>
+        td {
+            width: 50px;
+            text-align: center;
+        }
+    </style>
 </head>
-
 <body>
-  <h1>LL(1) Parser</h1>
-  <form method="POST" action="/parse">
-    <h2>Aturan Produksi:</h2>
-    <textarea name="cfg" rows="7" cols="34" readonly>
+    <form method='post'>
+        Aturan Produksi : <br>
+        <textarea name='cfg' rows="7" cols="34" readonly>
 LL(1) DENGAN NOTASI SEDERHANA
 S -> AB | CD
 A -> xA | y
 B -> yB | x  
 C -> aD | b  
 D -> bC | a
-</textarea>
-    <br><br>
-    <h2>Parse Table:</h2>
-    {{ .parseTable }}
-    <br><br>
-    <h2>Contoh input diterima:</h2>
-    <p>yx, xyx, xyyx, xxyyx</p>
-    <br>
-    <h2>Input:</h2>
-    <textarea name="teks" rows="3"></textarea>
-    <br><br>
-    <input type="submit" value="Parsing">
-  </form>
-  <br>
-  <h2>Hasil:</h2>
-  <textarea id="hasil" rows="3" readonly>{{ .hasil }}</textarea>
-  <script>
-    document.getElementById('hasil').innerHTML = '{{ .status }}';
-  </script>
-</body>
+        </textarea><br><br>
+        Parse Table<br>
+        <table border='1'>
+            <tr>
+                <th></th>
+                <th>x</th>
+                <th>y</th>
+                <th>a</th>
+                <th>b</th>
+                <th>EOS</th>
+            </tr>
+            <tr>
+                <td>S</td>
+                <td>AB</td>
+                <td>AB</td>
+                <td>CD</td>
+                <td>CD</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>A</td>
+                <td>xA</td>
+                <td>y</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>B</td>
+                <td>x</td>
+                <td>yB</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>C</td>
+                <td>-</td>
+                <td>-</td>
+                <td>aD</td>
+                <td>b</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>D</td>
+                <td>-</td>
+                <td>-</td>
+                <td>a</td>
+                <td>bC</td>
+                <td>-</td>
+            </tr>
+        </table>
+        <br>
+        Contoh input diterima:<br>
+        yx, xyx, xyyx, xxyyx<br><br>
+        Input : <br>
+        <textarea name='teks' id='tes' rows="3">xyyx</textarea><br><br>
+        <input type='submit' value='Parsing'><br>
+        Hasil : <br>
+        <textarea id='hasil' rows="3"></textarea>
+    </form>
+    <script>
+        function getToken(teks, j) {
+            var k = teks.length;
+            var simbol = teks.charAt(j);
+            j++;
+            return simbol;
+        }
 
+        function pop(stack) {
+            var x = stack.isi[stack.n];
+            stack.n--;
+            return x;
+        }
+
+        function isEmpty(stack) {
+            if (stack.n == 0) return true;
+            return false;
+        }
+
+        function readTop(stack) {
+            return stack.isi[stack.n];
+        }
+
+        function push(stack, x) {
+            stack.n++;
+            stack.isi[stack.n] = x;
+        }
+
+        var stack = {
+            n: 0,
+            isi: []
+        };
+        var tabelParsing = {
+            'S': {
+                'x': 'AB',
+                'y': 'AB',
+                'a': 'CD',
+                'b': 'CD',
+                '#': '-',
+            },
+            'A': {
+                'x': 'xA',
+                'y': 'y',
+                'a': '-',
+                'b': '-',
+                '#': '-',
+            },
+            'B': {
+                'x': 'x',
+                'y': 'yB',
+                'a': '-',
+                'b': '-',
+                '#': '-',
+            },
+            'C': {
+                'x': '-',
+                'y': '-',
+                'a': 'aD',
+                'b': 'b',
+                '#': '-',
+            },
+            'D': {
+                'x': '-',
+                'y': '-',
+                'a': 'a',
+                'b': 'bC',
+                '#': '-',
+            },
+        };
+        var simbolAwal = 'S'; //Non Terminal yang menjadi simbol awal
+
+        function updateOutput(text) {
+            document.getElementById('hasil').value = text;
+        }
+
+        function parseInput() {
+            var input = document.getElementById('tes').value + '#';
+            updateOutput('');
+            push(stack, simbolAwal);
+            var i = 0;
+            var simbol = getToken(input, i);
+            while (!isEmpty(stack)) {
+                var top = readTop(stack);
+                if (top >= 'a') {
+                    if (top == simbol) {
+                        pop(stack);
+                        simbol = getToken(input, i);
+                    } else {
+                        updateOutput('Error/Ditolak');
+                        break;
+                    }
+                } else if (top <= 'Z') {
+                    var sel = tabelParsing[top][simbol];
+                    if (sel != '-') {
+                        pop(stack);
+                        for (var k = sel.length - 1; k >= 0; k--) {
+                            push(stack, sel.charAt(k));
+                        }
+                    } else {
+                        updateOutput('Error/Ditolak');
+                        break;
+                    }
+                }
+            }
+            if (simbol == '#' && updateOutput() !== 'Error/Ditolak') {
+                updateOutput('DITERIMA');
+            }
+        }
+
+        document.querySelector('form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            parseInput();
+        });
+    </script>
+</body>
 </html>

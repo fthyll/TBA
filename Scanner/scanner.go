@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,50 +18,13 @@ func getTokenFromString(text string, index int) string {
 
 	// Extract a token
 	for index < k && text[index] != ' ' && text[index] != '\r' && text[index] != '\n' && text[index] != '\t' {
-		if text[index] == '>' {
+		if text[index] == '>' || text[index] == '<' || text[index] == '=' || text[index] == '+' || text[index] == '-' {
 			if word != "" {
 				return word
 			} else {
+				word += string(text[index])
 				index++
-				if text[index] == '=' {
-					index++
-					return ">="
-				} else {
-					return ">"
-				}
-			}
-		} else if text[index] == '<' {
-			if word != "" {
 				return word
-			} else {
-				index++
-				if text[index] == '=' {
-					index++
-					return "<="
-				} else {
-					return "<"
-				}
-			}
-		} else if text[index] == '=' {
-			if word != "" {
-				return word
-			} else {
-				index++
-				return "="
-			}
-		} else if text[index] == '+' {
-			if word != "" {
-				return word
-			} else {
-				index++
-				return "+"
-			}
-		} else if text[index] == '-' {
-			if word != "" {
-				return word
-			} else {
-				index++
-				return "-"
 			}
 		}
 		word += string(text[index])
@@ -78,6 +42,7 @@ func scan(text string) []string {
 	for j < k {
 		token := getTokenFromString(text, j)
 		tokens = append(tokens, token)
+		j += len(token)
 	}
 
 	return tokens
@@ -86,11 +51,12 @@ func scan(text string) []string {
 func main() {
 	r := gin.Default()
 
-	r.LoadHTMLFiles("index.html")
+	r.LoadHTMLFiles("index.html", "result.html")
 
 	r.POST("/parse", func(c *gin.Context) {
 		inputText := c.PostForm("teks")
 		tokens := scan(inputText)
+		fmt.Println(tokens) // Untuk melihat tokens yang dihasilkan
 		c.HTML(200, "result.html", gin.H{
 			"tokens": strings.Join(tokens, "\n"),
 		})
@@ -98,6 +64,13 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", nil)
+	})
+
+	r.GET("/result", func(c *gin.Context) {
+		tokens := c.Query("tokens")
+		c.HTML(200, "result.html", gin.H{
+			"tokens": tokens,
+		})
 	})
 
 	r.Run()
