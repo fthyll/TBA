@@ -1,6 +1,9 @@
 package main
 
 import (
+	"html/template"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -117,7 +120,7 @@ func parseInput(teks string) string {
 }
 
 func main() {
-	html := `<!DOCTYPE html>
+	htmlTemplate := `<!DOCTYPE html>
 	<html>
 		<head>
 			<title>LL(1) Parser</title>
@@ -140,7 +143,56 @@ C -> aD | b
 D -> bC | a
 				</textarea><br><br>
 				Parse Table<br>
-				<!-- Display the parse table here -->
+				<table border='1'>
+					<tr>
+						<th></th>
+						<th>x</th>
+						<th>y</th>
+						<th>a</th>
+						<th>b</th>
+						<th>EOS</th>
+					</tr>
+					<tr>
+						<td>S</td>
+						<td>{{.S.x}}</td>
+						<td>{{.S.y}}</td>
+						<td>{{.S.a}}</td>
+						<td>{{.S.b}}</td>
+						<td>{{.S.EOS}}</td>
+					</tr>
+					<tr>
+						<td>A</td>
+						<td>{{.A.x}}</td>
+						<td>{{.A.y}}</td>
+						<td>{{.A.a}}</td>
+						<td>{{.A.b}}</td>
+						<td>{{.A.EOS}}</td>
+					</tr>
+					<tr>
+						<td>B</td>
+						<td>{{.B.x}}</td>
+						<td>{{.B.y}}</td>
+						<td>{{.B.a}}</td>
+						<td>{{.B.b}}</td>
+						<td>{{.B.EOS}}</td>
+					</tr>
+					<tr>
+						<td>C</td>
+						<td>{{.C.x}}</td>
+						<td>{{.C.y}}</td>
+						<td>{{.C.a}}</td>
+						<td>{{.C.b}}</td>
+						<td>{{.C.EOS}}</td>
+					</tr>
+					<tr>
+						<td>D</td>
+						<td>{{.D.x}}</td>
+						<td>{{.D.y}}</td>
+						<td>{{.D.a}}</td>
+						<td>{{.D.b}}</td>
+						<td>{{.D.EOS}}</td>
+					</tr>
+				</table>
 				<br>
 				Contoh input diterima:<br>
 				yx, xyx, xyyx, xxyyx<br><br>
@@ -188,9 +240,54 @@ D -> bC | a
 
 	router := gin.Default()
 
+	router.SetHTMLTemplate(template.Must(template.New("").Parse(htmlTemplate)))
+
 	router.GET("/", func(c *gin.Context) {
-		c.Header("Content-Type", "text/html")
-		c.String(200, html)
+		tabelParsing := map[string]map[string]string{
+			"S": {
+				"x": "AB",
+				"y": "AB",
+				"a": "CD",
+				"b": "CD",
+				"#": "-",
+			},
+			"A": {
+				"x": "xA",
+				"y": "y",
+				"a": "-",
+				"b": "-",
+				"#": "-",
+			},
+			"B": {
+				"x": "x",
+				"y": "yB",
+				"a": "-",
+				"b": "-",
+				"#": "-",
+			},
+			"C": {
+				"x": "-",
+				"y": "-",
+				"a": "aD",
+				"b": "b",
+				"#": "-",
+			},
+			"D": {
+				"x": "-",
+				"y": "-",
+				"a": "a",
+				"b": "bC",
+				"#": "-",
+			},
+		}
+
+		c.HTML(http.StatusOK, "", gin.H{
+			"S": tabelParsing["S"],
+			"A": tabelParsing["A"],
+			"B": tabelParsing["B"],
+			"C": tabelParsing["C"],
+			"D": tabelParsing["D"],
+		})
 	})
 
 	router.POST("/", func(c *gin.Context) {
