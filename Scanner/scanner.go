@@ -10,13 +10,13 @@ func getTokenFromString(text string, index int) string {
 	k := len(text)
 	word := ""
 
-	// Ignore spaces, carriage returns, and line breaks
-	for index < k && (text[index] == ' ' || text[index] == '\r' || text[index] == '\n') {
+	// Ignore spaces, carriage returns, line breaks, and tabs
+	for index < k && (text[index] == ' ' || text[index] == '\r' || text[index] == '\n' || text[index] == '\t') {
 		index++
 	}
 
 	// Extract a token
-	for index < k && text[index] != ' ' && text[index] != '\r' && text[index] != '\n' {
+	for index < k && text[index] != ' ' && text[index] != '\r' && text[index] != '\n' && text[index] != '\t' {
 		if text[index] == '>' {
 			if word != "" {
 				return word
