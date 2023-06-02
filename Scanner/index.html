@@ -5,12 +5,17 @@
 </head>
 <body>
     <h1>Program Scanner</h1>
+    <p>Program scanner membaca huruf per huruf dan memisahkan setiap token.</p>
+    <h2>Daftar Token yang Digunakan:</h2>
+    <ul>
+        <li>Semua kata yang dibatasi oleh spasi</li>
+        <li>Simbol token: >, <, =, =>, <=, +, -, *</li>
+    </ul>
     <form id="scanner-form" action="/parse" method="post">
         <label for="teks">Teks Input:</label><br>
         <textarea id="teks" name="teks" rows="6"></textarea><br><br>
         <input type="submit" value="Parsing">
     </form>
-
     <h1>Hasil Parsing</h1>
     <textarea id="hasil" rows="20">{{.tokens}}</textarea>
 </body>
