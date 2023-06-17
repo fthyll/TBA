@@ -2,76 +2,93 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
-func getTokenFromString(text string, index int) string {
-	k := len(text)
-	word := ""
+func getToken(teks string, j *int) string {
+	k := len(teks)
+	kata := ""
 
-	// Ignore spaces, carriage returns, line breaks, and tabs
-	for index < k && (text[index] == ' ' || text[index] == '\r' || text[index] == '\n' || text[index] == '\t') {
-		index++
+	// abaikan spasi dan pindah baris
+	for jVal := *j; jVal < k && (teks[jVal] == ' ' || teks[jVal] == '\r' || teks[jVal] == '\n'); jVal++ {
+		*j++
 	}
 
-	// Extract a token
-	for index < k && text[index] != ' ' && text[index] != '\r' && text[index] != '\n' && text[index] != '\t' {
-		if text[index] == '>' || text[index] == '<' || text[index] == '=' || text[index] == '+' || text[index] == '-' {
-			if word != "" {
-				return word
+	// ambil 1 kata/token
+	for jVal := *j; jVal < k && (teks[jVal] != ' ' && teks[jVal] != '\r' && teks[jVal] != '\n'); jVal++ {
+		if teks[jVal] == '>' {
+			if kata != "" {
+				return kata
 			} else {
-				word += string(text[index])
-				index++
-				return word
+				*j++
+				if teks[*j] == '=' {
+					*j++
+					return ">="
+				} else {
+					return ">"
+				}
+			}
+		} else if teks[jVal] == '<' {
+			if kata != "" {
+				return kata
+			} else {
+				*j++
+				if teks[*j] == '=' {
+					*j++
+					return "<="
+				} else {
+					return "<"
+				}
+			}
+		} else if teks[jVal] == '=' {
+			if kata != "" {
+				return kata
+			} else {
+				*j++
+				return "="
+			}
+		} else if teks[jVal] == '+' {
+			if kata != "" {
+				return kata
+			} else {
+				*j++
+				return "+"
+			}
+		} else if teks[jVal] == '-' {
+			if kata != "" {
+				return kata
+			} else {
+				*j++
+				return "-"
 			}
 		}
-		word += string(text[index])
-		index++
+		kata += string(teks[jVal])
+		*j++
 	}
-
-	return word
+	return kata
 }
 
-func scan(text string) []string {
-	var tokens []string
-	k := len(text)
-	j := 0
+func scanHandler(w http.ResponseWriter, r *http.Request) {
+	teks := r.FormValue("teks")
 
-	for j < k {
-		token := getTokenFromString(text, j)
+	i := 0
+	var tokens []string
+	k := len(teks)
+	for i < k {
+		token := getToken(teks, &i)
 		tokens = append(tokens, token)
-		j += len(token)
 	}
 
-	return tokens
+	response := strings.Join(tokens, "\n")
+	fmt.Fprintf(w, response)
 }
 
 func main() {
-	r := gin.Default()
+	http.HandleFunc("/scan", scanHandler)
+	http.Handle("/", http.FileServer(http.Dir(".")))
 
-	r.LoadHTMLFiles("index.html", "result.html")
-
-	r.POST("/parse", func(c *gin.Context) {
-		inputText := c.PostForm("teks")
-		tokens := scan(inputText)
-		fmt.Println(tokens) // Untuk melihat tokens yang dihasilkan
-		c.HTML(200, "result.html", gin.H{
-			"tokens": strings.Join(tokens, "\n"),
-		})
-	})
-
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", nil)
-	})
-
-	r.GET("/result", func(c *gin.Context) {
-		tokens := c.Query("tokens")
-		c.HTML(200, "result.html", gin.H{
-			"tokens": tokens,
-		})
-	})
-
-	r.Run()
+	fmt.Println("Server berjalan di http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
